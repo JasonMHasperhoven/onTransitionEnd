@@ -1,35 +1,31 @@
 const getTransitionEnd = () => {
-  if (window.QUnit) {
-    return false;
-  }
-
-  let el = document.createElement('div');
+  const el = document.createElement('div');
 
   const TransitionEndEvent = {
     WebkitTransition: 'webkitTransitionEnd',
     MozTransition: 'transitionend',
     OTransition: 'oTransitionEnd otransitionend',
-    transition: 'transitionend'
+    transition: 'transitionend',
   };
 
-  for (let name in TransitionEndEvent) {
-    if (el.style[name] !== undefined) {
-      return TransitionEndEvent[name];
+  Object.entries(TransitionEndEvent).forEach(([styleName, eventName]) => {
+    if (el.style[styleName] !== undefined) {
+      return eventName;
     }
-  }
+  });
 
   return false;
 };
 
 const transitionEndSupport = getTransitionEnd();
-const transitionEnd = transitionEndSupport ? transitionEndSupport : 'transitionend';
+const transitionEnd = transitionEndSupport || 'transitionend';
 
-EventTarget.prototype.transitionEndFallback = function(duration) {
+EventTarget.prototype.transitionEndFallback = function (duration) {
   if (transitionEndSupport) {
     return this;
   }
 
-  let transitionendEvent = document.createEvent('TransitionEvent');
+  const transitionendEvent = document.createEvent('TransitionEvent');
   transitionendEvent.initEvent('transitionend', true, true);
 
   window.setTimeout(() => {
@@ -39,8 +35,8 @@ EventTarget.prototype.transitionEndFallback = function(duration) {
   return this;
 };
 
-EventTarget.prototype.onTransitionEnd = function(fn, duration) {
-  const transitionEndListener = fn => {
+EventTarget.prototype.onTransitionEnd = function (fn, duration) {
+  const transitionEndListener = (event, fn) => {
     if (this === event.target) {
       this.removeEventListener(transitionEnd, transitionEndListenerWithFallback);
       fn();
@@ -49,8 +45,8 @@ EventTarget.prototype.onTransitionEnd = function(fn, duration) {
     return this;
   };
 
-  const transitionEndListenerWithFallback = event => {
-    transitionEndListener(fn).transitionEndFallback(duration);
+  const transitionEndListenerWithFallback = (event) => {
+    transitionEndListener(event, fn).transitionEndFallback(duration);
   };
 
   this.addEventListener(transitionEnd, transitionEndListenerWithFallback);
